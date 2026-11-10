@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DermaScan AI — Clinical Skin Disease Classifier</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-badge">🔬</div>
+        <div>
+          <h1 class="brand-name">DermaScan AI</h1>
+          <p class="brand-tagline">Clinical Skin Disease Detection & PyTorch Screening Engine</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="status-indicator">
+          <span class="pulse-dot"></span>
+          PyTorch MobileNetV3 Active
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Printable Header (Only appears when printed / PDF exported) -->
+  <div class="print-banner">
+    <h2>DERMASCAN AI — CLINICAL DERMATOLOGICAL SCREENING REPORT</h2>
+    <p>Automated Computer-Aided Deep Learning Assessment | HAM10000 Taxonomy</p>
+    <p><small>Date: <span id="printDate"></span> | Medical Disclaimer: Not a substitute for histopathological biopsy.</small></p>
+  </div>
+
+  <!-- Main Container -->
+  <main class="main-layout">
+    
+    <!-- Left Column: Image Ingestion & Input -->
+    <section class="panel panel-input">
+      <div class="panel-header">
+        <h2 class="panel-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          1. Lesion Ingestion
+        </h2>
+      </div>
+
+      <!-- Drag & Drop Zone -->
+      <div class="drop-area" id="dropArea">
+        <div class="drop-icon">📤</div>
+        <h3 class="drop-heading">Drag & drop skin lesion image</h3>
+        <p class="drop-hint">Supports JPEG, PNG dermatoscopic photos</p>
+        <input type="file" id="fileInput" accept="image/*" style="display: none;">
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-group">
+        <button class="btn btn-primary" id="btnBrowse">
+          <span>📁 Browse Image</span>
+        </button>
+        <button class="btn btn-secondary" id="btnCamera">
+          <span>📹 Live Camera</span>
+        </button>
+      </div>
+
+      <!-- Quick Test Presets (Instant 1-Click Evaluation) -->
+      <div class="presets-container">
+        <span class="presets-label">Quick Test Presets (Click to Test Instantly)</span>
+        <div class="preset-grid">
+          <button class="preset-card" data-sample="melanoma">
+            <span class="preset-title">Melanoma</span>
+            <span class="preset-tag tag-high">🔴 Malignant (High Risk)</span>
+          </button>
+          <button class="preset-card" data-sample="nevus">
+            <span class="preset-title">Melanocytic Mole</span>
+            <span class="preset-tag tag-low">🟢 Benign Nevus</span>
+          </button>
+          <button class="preset-card" data-sample="bcc">
+            <span class="preset-title">Basal Cell Carc.</span>
+            <span class="preset-tag tag-high">🔴 Carcinoma (High Risk)</span>
+          </button>
+          <button class="preset-card" data-sample="bkl">
+            <span class="preset-title">Benign Keratosis</span>
+            <span class="preset-tag tag-low">🟢 Seborrheic Keratosis</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Preview Viewport -->
+      <div class="viewport-card" id="viewportCard">
+        <div class="viewport-header">
+          <span>Active Lesion Viewport</span>
+          <span class="viewport-status" id="viewportStatus">Ready for Inference</span>
+        </div>
+        <div class="viewport-screen">
+          <canvas id="activeCanvas"></canvas>
+          <div class="scan-laser" id="scanLaser"></div>
+        </div>
+      </div>
+
+      <button class="btn btn-analyze" id="btnAnalyze">
+        <span>⚡ Run PyTorch Deep Learning Analysis</span>
+      </button>
+
+      <button class="btn btn-export" id="btnPrint">
+        <span>🖨️ Export Clinical PDF Report</span>
+      </button>
+    </section>
+
+    <!-- Right Column: Diagnostic Assessment & Differential Triage -->
+    <section class="panel panel-results">
+      <div class="panel-header">
+        <h2 class="panel-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          2. Diagnostic Assessment & Clinical Triage
+        </h2>
+      </div>
+
+      <!-- Urgency Banner -->
+      <div class="triage-card" id="triageCard">
+        <div class="triage-main">
+          <span class="triage-badge" id="triageBadge">🟢 BENIGN / LOW RISK</span>
+          <h3 class="triage-disease" id="triageDisease">Melanocytic Nevus (nv)</h3>
+          <p class="triage-desc" id="triageDesc">
+            Lesion exhibits uniform benign pigmentation and regular circumscribed borders. Routine self-monitoring advised.
+          </p>
+        </div>
+        <div class="confidence-circle">
+          <span class="confidence-num" id="confidenceNum">--%</span>
+          <span class="confidence-lbl">Confidence</span>
+        </div>
+      </div>
+
+      <!-- 7-Class Probability Distribution (HAM10000) -->
+      <div class="distribution-card">
+        <h3 class="distribution-title">HAM10000 Differential Class Probabilities</h3>
+        <div class="bars-container" id="barsContainer">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Clinical Information Guide Card -->
+      <div class="info-card">
+        <h4 class="info-title">ℹ️ Clinical Interpretation Guide</h4>
+        <ul class="info-list">
+          <li><strong>Melanoma (mel):</strong> High metastatic hazard. Requires urgent clinical biopsy.</li>
+          <li><strong>Basal Cell Carcinoma (bcc):</strong> Common malignant carcinoma requiring dermatological excision.</li>
+          <li><strong>Actinic Keratosis (akiec):</strong> Pre-malignant epidermal dysplasia induced by chronic UV exposure.</li>
+          <li><strong>Benign Nevus (nv):</strong> Typical harmless melanocytic proliferation.</li>
+        </ul>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Live Camera Modal -->
+  <div class="modal" id="cameraModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Live Camera Lesion Capture</h3>
+        <button class="modal-close" id="btnCloseCamera">✕</button>
+      </div>
+      <video id="videoPreview" autoplay playsinline></video>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="btnSnap">📸 Capture Lesion</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Medical Disclaimer Footer -->
+  <footer class="app-footer">
+    <p>🔒 <strong>Medical Notice</strong>: DermaScan AI is a computer-aided screening tool designed for research and educational purposes. It does not replace a clinical examination or biopsy by a certified dermatologist.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
